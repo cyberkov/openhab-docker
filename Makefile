@@ -2,7 +2,9 @@ TARGET ?= amd64
 ARCHS ?= amd64 armhf arm64
 BASE_ARCH ?= amd64
 DOCKER_REPO ?= openhab/openhab
+GIT_REPO ?= cyberkov/openhab-docker
 FLAVOR ?= online
+TRAVIS_TOKEN ?= secretsecret
 
 ifeq ($(FLAVOR),offline)
   DOWNLOAD_URL="https://openhab.ci.cloudbees.com/job/openHAB-Distribution/lastSuccessfulBuild/artifact/distributions/openhab-offline/target/openhab-offline-2.0.0-SNAPSHOT.zip"
@@ -38,3 +40,12 @@ clean:
 
 push:
 	docker push $(DOCKER_REPO):$(TARGET)-$(FLAVOR)
+
+trigger:
+	curl -s -X POST \
+	  -H "Content-Type: application/json" \
+	  -H "Accept: application/json" \
+	  -H "Travis-API-Version: 3" \
+	  -H "Authorization: token $(TRAVIS_TOKEN)" \
+	  -d '{ "request": { "branch":"multiarch-support" }}' \
+	  https://api.travis-ci.org/repo/$(subst /,%2F,$(GIT_REPO))/requests

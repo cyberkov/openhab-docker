@@ -27,4 +27,9 @@ env:
 matrix:
   fast_finish: true
 script:
-  - make build push
+  - make build
+deploy:
+  provider: script
+  script: make push
+  on:
+    branch: dockerize-openhab
