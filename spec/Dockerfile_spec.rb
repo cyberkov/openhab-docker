@@ -1,17 +1,11 @@
 # spec/Dockerfile_spec.rb
 
-require "serverspec"
-require "docker"
-require "timeout"
+require 'spec_helper'
 
-describe "Dockerfile" do
+describe "container" do
   before(:all) do
-    @image = Docker::Image.build_from_dir('.', :dockerfile => 'Dockerfile.x86') do |v|
-      if (log = JSON.parse(v)) && log.has_key?("stream")
-        $stdout.puts log["stream"]
-      end
-    end
-    @container = @image.run('debug')
+    @container = Docker::Container.create('Cmd' => ['debug'], 'Image' => ENV['IMAGE']).start
+#    @container = @image.run('debug')
 
     set :os, family: :ubuntu
     set :backend, :docker
@@ -20,15 +14,24 @@ describe "Dockerfile" do
     set :docker_container
   end
   after(:all) do
-#        @image.remove(:force => true)
     @container.kill!
     @container.remove
   end
 
-
   describe "basics" do
     it "should exist" do
-      expect(@image).not_to be_nil
+      expect(@container).not_to be_nil
+    end
+
+    describe command('uname -p') do
+      case ENV['IMAGE'].split(':')[1].split('-')[0]
+      when 'amd64'
+        its(:stdout) { should match (/x86_64/) }
+      when 'arm64'
+        its(:stdout) { should match(/arm64/) }
+      when 'armhf'
+        its(:stdout) { should match(/armhf/) }
+      end
     end
 
     describe user('openhab') do
@@ -64,6 +67,7 @@ describe "Dockerfile" do
 
     files = [ 
       '/openhab/userdata/logs/openhab.log',
+      '/openhab/conf/demo',
     ]
 
     files.each do |ohfile|
@@ -82,23 +86,16 @@ describe "Dockerfile" do
   end
 
   describe "networking" do
-    #EXPOSE 8080 8443 5555
-    it "should expose the default ports" do
-      expect(@image.json["Config"]["ExposedPorts"].has_key?("8080/tcp")).to be_truthy
-      expect(@image.json["Config"]["ExposedPorts"].has_key?("8443/tcp")).to be_truthy
-      expect(@image.json["Config"]["ExposedPorts"].has_key?("5555/tcp")).to be_truthy
-    end
-
     # Port tests should be the last one as Java takes some time to load...
-    describe "blocking port tests" do
-      Timeout::timeout(5*60) do
-        describe command('while ! nc -w 1 localhost 8080 2>/dev/null; do echo -n .; sleep 1; done') do
-          its(:exit_status) { should eq 0 }
-        end
-        describe command('while ! nc -w 1 localhost 8443 2>/dev/null; do echo -n .; sleep 1; done') do
-          its(:exit_status) { should eq 0 }
-        end
-      end
-    end
+#    describe "blocking port tests" do
+#      Timeout::timeout(5*60) do
+#        describe command('while ! nc -w 1 localhost 8080 2>/dev/null; do echo -n .; sleep 1; done') do
+#          its(:exit_status) { should eq 0 }
+#        end
+#        describe command('while ! nc -w 1 localhost 8443 2>/dev/null; do echo -n .; sleep 1; done') do
+#          its(:exit_status) { should eq 0 }
+#        end
+#      end
+#    end
   end
 end
