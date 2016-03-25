@@ -1,7 +1,7 @@
 TARGET ?= amd64
 ARCHS ?= amd64 armhf arm64
 BASE_ARCH ?= amd64
-DOCKER_REPO ?= openhab/openhab
+DOCKER_REPO ?= cyberkov/openhab
 GIT_REPO ?= cyberkov/openhab-docker
 FLAVOR ?= online
 TRAVIS_TOKEN ?= secretsecret
@@ -33,6 +33,10 @@ tmp-$(TARGET)/Dockerfile: Dockerfile $(shell find files)
 	sed -i 's/#[[:space:]]*arch=$(TARGET)//g' $@
 	cat $@
 
+test:
+	env IMAGE="$(DOCKER_REPO):$(TARGET)-$(FLAVOR)" \
+	bundle exec rspec
+
 clean:
 	for arch in $(ARCHS); do                     \
 	  rm -rf tmp-$$arch;                      \
@@ -42,7 +46,7 @@ push:
 	docker push $(DOCKER_REPO):$(TARGET)-$(FLAVOR)
 
 trigger:
-	curl -s -X POST \
+	@curl -s -X POST \
 	  -H "Content-Type: application/json" \
 	  -H "Accept: application/json" \
 	  -H "Travis-API-Version: 3" \

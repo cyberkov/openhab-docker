@@ -30,6 +30,6 @@ script:
   - make build
 deploy:
   provider: script
-  script: make push
+  script: 'for i in {1..5}; do make push && break || sleep 15; done'
   on:
     branch: dockerize-openhab
