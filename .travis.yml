@@ -28,5 +28,6 @@ env:
 matrix:
   fast_finish: true
 script:
-  - make build test
+  - make build
+  - make test
 #  - make build test && (make push || (sleep 15; make push) || (sleep 15; make push))
