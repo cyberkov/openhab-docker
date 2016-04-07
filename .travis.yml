@@ -1,8 +1,10 @@
 sudo: required
-language: bash
+language: ruby
+cache: bundler
 branches:
   only:
     - master
+    - specs
 services:
   - docker
 before_install:
@@ -26,4 +28,5 @@ env:
 matrix:
   fast_finish: true
 script:
-  - make build && (make push || (sleep 15; make push) || (sleep 15; make push))
+  - make build test
+#  - make build test && (make push || (sleep 15; make push) || (sleep 15; make push))
